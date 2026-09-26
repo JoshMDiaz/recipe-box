@@ -1,5 +1,6 @@
 {
   "projects": {
-    "default": "demo-recipe-box"
+    "default": "demo-recipe-box",
+    "prod": "recipe-box-70481"
   }
 }
