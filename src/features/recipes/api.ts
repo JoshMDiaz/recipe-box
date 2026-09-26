@@ -56,7 +56,12 @@ async function uploadPhoto(recipeId: string, file: File) {
   const ext = blob.type === "image/webp" ? "webp" : (file.name.split(".").pop() ?? "jpg");
   const path = `users/${requireUid()}/recipes/${recipeId}/${crypto.randomUUID()}.${ext}`;
   const objectRef = ref(storage, path);
-  await uploadBytes(objectRef, blob, { contentType: blob.type || file.type });
+  await uploadBytes(objectRef, blob, {
+    contentType: blob.type || file.type,
+    // Each upload gets a fresh path, so a cached copy is never stale. "private"
+    // keeps shared caches from holding one user's photos.
+    cacheControl: "private, max-age=31536000, immutable",
+  });
   return { imagePath: path, imageUrl: await getDownloadURL(objectRef) };
 }
 
