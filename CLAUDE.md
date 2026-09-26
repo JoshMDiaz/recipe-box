@@ -51,6 +51,7 @@ Vite single-page app (originally a Lovable prototype). Read README.md for the ov
 
 ## Deploying
 
+- Live at https://recipe-box-delta-nine.vercel.app. That domain is on Firebase Auth's authorized domains list, and a custom domain would need adding there too.
 - The site is hosted on Vercel, configured in `vercel.json`. It rewrites every path except `/assets/` to `index.html`. Each push to `main` deploys.
 - The Firebase project is `recipe-box-70481`, the `prod` alias in `.firebaserc`. `default` stays `demo-recipe-box`, so a command without a project named can't touch production.
 - Vercel doesn't deploy the Firestore rules. After changing `firestore.rules` or the indexes, remind the user to run `pnpm deploy:rules`. It needs their `firebase login`, so don't run it for them unless asked.

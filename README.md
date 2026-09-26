@@ -2,6 +2,8 @@
 
 Paste a recipe from anywhere, let the app pull out the ingredients and steps, and swipe through your collection.
 
+**Live:** https://recipe-box-delta-nine.vercel.app
+
 ## Stack
 
 | Layer          | Choice                                                                                          |
