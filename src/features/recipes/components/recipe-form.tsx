@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { formatDuration, parseDuration } from "../time";
 import type { RecipeInput } from "../types";
 
 type Props = {
@@ -31,7 +32,12 @@ export function RecipeForm({
   const [title, setTitle] = useState(initial.title);
   const [description, setDescription] = useState(initial.description ?? "");
   const [servings, setServings] = useState(initial.servings ?? "");
-  const [totalTime, setTotalTime] = useState(initial.totalTime ?? "");
+  const [initialTime] = useState(() => parseDuration(initial.totalTime));
+  const [hours, setHours] = useState(initialTime?.hours ? String(initialTime.hours) : "");
+  const [minutes, setMinutes] = useState(initialTime?.minutes ? String(initialTime.minutes) : "");
+  // A pasted time the fields can't show, like "overnight". It's kept unless
+  // the user enters hours or minutes, or clears it.
+  const [freeTextTime, setFreeTextTime] = useState(initialTime ? undefined : initial.totalTime);
   const [tags, setTags] = useState(initial.tags.join(", "));
   const [ingredients, setIngredients] = useState(initial.ingredients.join("\n"));
   const [steps, setSteps] = useState(initial.steps.join("\n"));
@@ -56,7 +62,9 @@ export function RecipeForm({
         title,
         description,
         servings,
-        totalTime,
+        totalTime:
+          formatDuration({ hours: Number(hours) || 0, minutes: Number(minutes) || 0 }) ||
+          freeTextTime,
         tags: tags.split(","),
         ingredients: toLines(ingredients),
         steps: toLines(steps),
@@ -101,14 +109,40 @@ export function RecipeForm({
               placeholder="4"
             />
           </Field>
-          <Field>
-            <FieldLabel htmlFor={`${id}-time`}>Total time</FieldLabel>
-            <Input
-              id={`${id}-time`}
-              value={totalTime}
-              onChange={(e) => setTotalTime(e.target.value)}
-              placeholder="45 min"
-            />
+          <Field aria-labelledby={`${id}-time`}>
+            <FieldLabel id={`${id}-time`} htmlFor={`${id}-hours`}>
+              Total time
+            </FieldLabel>
+            <div className="grid grid-cols-2 gap-2">
+              <DurationInput
+                id={`${id}-hours`}
+                label="Hours"
+                unit="hr"
+                value={hours}
+                onChange={setHours}
+                placeholder="0"
+              />
+              <DurationInput
+                id={`${id}-minutes`}
+                label="Minutes"
+                unit="min"
+                value={minutes}
+                onChange={setMinutes}
+                placeholder="45"
+              />
+            </div>
+            {freeTextTime && !hours && !minutes && (
+              <FieldDescription>
+                Saved as “{freeTextTime}”.{" "}
+                <button
+                  type="button"
+                  className="underline underline-offset-2 hover:text-foreground"
+                  onClick={() => setFreeTextTime(undefined)}
+                >
+                  Clear
+                </button>
+              </FieldDescription>
+            )}
           </Field>
         </div>
 
@@ -192,5 +226,42 @@ export function RecipeForm({
         </div>
       </FieldGroup>
     </form>
+  );
+}
+
+function DurationInput({
+  id,
+  label,
+  unit,
+  value,
+  onChange,
+  placeholder,
+}: {
+  id: string;
+  label: string;
+  unit: string;
+  value: string;
+  onChange: (value: string) => void;
+  placeholder: string;
+}) {
+  return (
+    <div className="relative">
+      <Input
+        id={id}
+        type="number"
+        inputMode="numeric"
+        min={0}
+        step={1}
+        aria-label={label}
+        value={value}
+        // Whole, non-negative numbers only.
+        onChange={(e) => onChange(e.target.value.replace(/\D/g, ""))}
+        placeholder={placeholder}
+        className="[appearance:textfield] pr-9 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+      />
+      <span className="pointer-events-none absolute top-1/2 right-2.5 -translate-y-1/2 text-sm text-muted-foreground">
+        {unit}
+      </span>
+    </div>
   );
 }
