@@ -17,8 +17,8 @@ Paste a recipe from anywhere, let the app pull out the ingredients and steps, an
 Requires **Node 24** (`nvm use`) and **Java 21+** (needed by the Firebase emulators).
 
 ```sh
-npm install
-npm run dev
+pnpm install
+pnpm dev
 ```
 
 This starts two processes:
@@ -26,7 +26,7 @@ This starts two processes:
 - **App** at http://localhost:5180
 - **Firebase emulators** (Firestore and Storage), with the admin UI at http://127.0.0.1:4000
 
-Local dev never touches a real Firebase project. It runs against a `demo-recipe-box` project that exists only in the emulators. Data is saved to `.emulator-data/` when you stop the dev server (Ctrl-C) and reloaded the next time you run `npm run dev`.
+Local dev never touches a real Firebase project. It runs against a `demo-recipe-box` project that exists only in the emulators. Data is saved to `.emulator-data/` when you stop the dev server (Ctrl-C) and reloaded the next time you run `pnpm dev`.
 
 When the box is empty, click **Load sample recipes** to add four starter recipes.
 
@@ -34,11 +34,11 @@ When the box is empty, click **Load sample recipes** to add four starter recipes
 
 | Script | What it does |
 |---|---|
-| `npm run dev` | Emulators + Vite dev server |
-| `npm run dev:web` | Vite only (bring your own emulators or real Firebase) |
-| `npm run build` | Type-check and production build to `dist/` |
-| `npm test` | Vitest (watch mode) |
-| `npm run lint` / `npm run typecheck` / `npm run format` | ESLint / tsc / Prettier |
+| `pnpm dev` | Emulators + Vite dev server |
+| `pnpm dev:web` | Vite only (bring your own emulators or real Firebase) |
+| `pnpm build` | Type-check and production build to `dist/` |
+| `pnpm test` | Vitest (watch mode) |
+| `pnpm lint` / `pnpm typecheck` / `pnpm format` | ESLint / tsc / Prettier |
 
 ## Project layout
 
@@ -54,7 +54,7 @@ src/
     parser.ts              # Pasted text → structured recipe (heuristic)
     image.ts               # Client-side photo downscaling before upload
     components/            # Recipe card, carousel, form, dialogs
-  components/ui/           # shadcn/ui components (generated with `npx shadcn add`)
+  components/ui/           # shadcn/ui components (generated with `pnpm shadcn add`)
   lib/firebase.ts          # Firebase init; connects to emulators in dev
 firestore.rules            # Security rules for recipes
 storage.rules              # Security rules for recipe photos
@@ -64,8 +64,8 @@ storage.rules              # Security rules for recipe photos
 
 1. Create a project at https://console.firebase.google.com, and enable **Firestore** and **Storage**.
 2. Add a Web app, then copy its config into `.env.production.local` (use `.env.example` as the template).
-3. Point the CLI at the project: `npx firebase use --add`.
-4. Deploy: `npm run build && npx firebase deploy`. This deploys Hosting, the Firestore rules and indexes, and the Storage rules.
+3. Point the CLI at the project: `pnpm firebase use --add`.
+4. Deploy: `pnpm build && pnpm firebase deploy`. This deploys Hosting, the Firestore rules and indexes, and the Storage rules.
 
 > **Before real users:** there is no authentication yet. The security rules check the *shape* of recipe data, but anyone who has the app can read, write, and delete recipes. Add Firebase Auth and scope recipes to `request.auth.uid` before sharing a deployed URL.
 
