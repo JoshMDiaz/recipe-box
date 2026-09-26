@@ -67,6 +67,13 @@ describe("the owner", () => {
     await assertFails(updateDoc(ref, { createdAt: Timestamp.fromMillis(0) }));
   });
 
+  test("can save a photo up to the size limit, but not over it", async () => {
+    const ref = doc(dbAs("alice"), recipePath("alice"));
+    const photo = (length: number) => "data:image/webp;base64,".padEnd(length, "A");
+    await assertSucceeds(setDoc(ref, { ...newRecipe(), imageUrl: photo(250_000) }));
+    await assertFails(setDoc(ref, { ...newRecipe(), imageUrl: photo(250_001) }));
+  });
+
   test("can't save a recipe without a title", async () => {
     const ref = doc(dbAs("alice"), recipePath("alice"));
     await assertFails(setDoc(ref, { ...newRecipe(), title: "" }));

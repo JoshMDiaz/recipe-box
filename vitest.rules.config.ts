@@ -1,7 +1,7 @@
 import { defineConfig } from "vitest/config";
 
-// Security rules tests. They need the Firestore and Storage emulators, so run
-// them with `pnpm test:rules`, which starts the emulators first.
+// Security rules tests. They need the Firestore emulator, so run them with
+// `pnpm test:rules`, which starts it first.
 export default defineConfig({
   test: {
     include: ["tests/rules/**/*.test.ts"],

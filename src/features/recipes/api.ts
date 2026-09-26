@@ -14,10 +14,9 @@ import {
   writeBatch,
   type DocumentSnapshot,
 } from "firebase/firestore";
-import { deleteObject, getDownloadURL, ref, uploadBytes } from "firebase/storage";
 import { requireUid } from "@/features/auth/auth";
-import { db, storage } from "@/lib/firebase";
-import { compressImage } from "./image";
+import { db } from "@/lib/firebase";
+import { photoToDataUrl } from "./image";
 import { recipeSchema, type Recipe, type RecipeInput } from "./types";
 
 /** Each user's recipes live under their own document, so the rules can check ownership by path. */
@@ -51,30 +50,6 @@ function clean(input: RecipeInput): RecipeInput {
   };
 }
 
-async function uploadPhoto(recipeId: string, file: File) {
-  const blob = await compressImage(file);
-  const ext = blob.type === "image/webp" ? "webp" : (file.name.split(".").pop() ?? "jpg");
-  const path = `users/${requireUid()}/recipes/${recipeId}/${crypto.randomUUID()}.${ext}`;
-  const objectRef = ref(storage, path);
-  await uploadBytes(objectRef, blob, {
-    contentType: blob.type || file.type,
-    // Each upload gets a fresh path, so a cached copy is never stale. "private"
-    // keeps shared caches from holding one user's photos.
-    cacheControl: "private, max-age=31536000, immutable",
-  });
-  return { imagePath: path, imageUrl: await getDownloadURL(objectRef) };
-}
-
-async function removePhoto(path?: string) {
-  if (!path) return;
-  try {
-    await deleteObject(ref(storage, path));
-  } catch (err) {
-    // Already gone is fine; anything else shouldn't block the recipe change.
-    console.warn("Could not delete photo", path, err);
-  }
-}
-
 export async function listRecipes(): Promise<Recipe[]> {
   const snap = await getDocs(query(recipes(), orderBy("createdAt", "desc")));
   return snap.docs.map(fromSnapshot);
@@ -87,10 +62,10 @@ export async function getRecipe(id: string): Promise<Recipe | null> {
 
 export async function createRecipe(input: RecipeInput, photo?: File): Promise<string> {
   const docRef = doc(recipes());
-  const upload = photo ? await uploadPhoto(docRef.id, photo) : {};
+  const data = clean(input);
+  if (photo) data.imageUrl = await photoToDataUrl(photo);
   await setDoc(docRef, {
-    ...clean(input),
-    ...upload,
+    ...data,
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
   });
@@ -103,27 +78,15 @@ export async function createRecipe(input: RecipeInput, photo?: File): Promise<st
  */
 export async function updateRecipe(existing: Recipe, input: RecipeInput, photo?: File | null) {
   const data = clean(input);
-  let image: { imageUrl?: string; imagePath?: string } = {
-    imageUrl: existing.imageUrl,
-    imagePath: existing.imagePath,
-  };
-  if (photo) image = await uploadPhoto(existing.id, photo);
-  else if (photo === null) image = {};
+  if (photo) data.imageUrl = await photoToDataUrl(photo);
+  else if (photo === null) data.imageUrl = undefined;
 
   // updateDoc ignores undefined, so blanked-out fields must be deleted explicitly.
-  const patch: Record<string, unknown> = Object.fromEntries(
-    Object.entries({ ...data, ...image }).map(([k, v]) => [k, v ?? deleteField()]),
-  );
-  for (const k of ["imageUrl", "imagePath"] as const) if (!(k in image)) patch[k] = deleteField();
-
+  const patch = Object.fromEntries(Object.entries(data).map(([k, v]) => [k, v ?? deleteField()]));
   await updateDoc(doc(recipes(), existing.id), { ...patch, updatedAt: serverTimestamp() });
-  if (photo !== undefined && existing.imagePath !== image.imagePath) {
-    await removePhoto(existing.imagePath);
-  }
 }
 
 export async function deleteRecipe(recipe: Recipe) {
-  await removePhoto(recipe.imagePath);
   await deleteDoc(doc(recipes(), recipe.id));
 }
 

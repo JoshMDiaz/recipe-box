@@ -10,14 +10,14 @@
   "scripts": {
     "dev": "concurrently -k -n db,web -c yellow,cyan \"pnpm:emulators\" \"pnpm:dev:web\"",
     "dev:web": "vite",
-    "emulators": "firebase emulators:start --only auth,firestore,storage --project demo-recipe-box --import ./.emulator-data --export-on-exit",
+    "emulators": "firebase emulators:start --only auth,firestore --project demo-recipe-box --import ./.emulator-data --export-on-exit",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
     "typecheck": "tsc -b",
     "lint": "eslint .",
     "format": "prettier --write .",
     "test": "vitest",
-    "test:rules": "firebase emulators:exec --only firestore,storage --project demo-recipe-box \"vitest run --config vitest.rules.config.ts\""
+    "test:rules": "firebase emulators:exec --only firestore --project demo-recipe-box \"vitest run --config vitest.rules.config.ts\""
   },
   "dependencies": {
     "@base-ui/react": "^1.8.0",

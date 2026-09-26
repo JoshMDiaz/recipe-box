@@ -175,9 +175,7 @@ function DeleteButton({ recipe }: { recipe: Recipe }) {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Delete “{recipe.title}”?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This removes the recipe and its photo for good.
-            </AlertDialogDescription>
+            <AlertDialogDescription>This removes the recipe for good.</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>

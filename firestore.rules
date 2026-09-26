@@ -7,12 +7,14 @@ service cloud.firestore {
     function isValidRecipe(data) {
       return data.keys().hasOnly(['title', 'description', 'servings', 'totalTime',
                                   'ingredients', 'steps', 'tags', 'imageUrl',
-                                  'imagePath', 'sourceText', 'createdAt', 'updatedAt'])
+                                  'sourceText', 'createdAt', 'updatedAt'])
         && data.title is string && data.title.size() > 0 && data.title.size() <= 200
         && data.ingredients is list && data.ingredients.size() <= 200
         && data.steps is list && data.steps.size() <= 200
         && data.tags is list && data.tags.size() <= 30
-        && (!('sourceText' in data) || data.sourceText.size() <= 50000);
+        && (!('sourceText' in data) || data.sourceText.size() <= 50000)
+        // Photos are stored inline as data URLs; matches MAX_IMAGE_URL_LENGTH in image.ts.
+        && (!('imageUrl' in data) || (data.imageUrl is string && data.imageUrl.size() <= 250000));
     }
 
     function isOwner(uid) {
