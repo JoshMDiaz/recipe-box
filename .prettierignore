@@ -1,8 +1,6 @@
-node_modules
 dist
-.output
-.vinxi
-pnpm-lock.yaml
+node_modules
+.emulator-data
 package-lock.json
-bun.lock
-routeTree.gen.ts
+src/routeTree.gen.ts
+src/components/ui

@@ -1,15 +1,33 @@
-// @lovable.dev/vite-tanstack-config already includes the following — do NOT add them manually
-// or the app will break with duplicate plugins:
-//   - TanStack devtools (dev-only, first), tanstackStart, viteReact, tailwindcss, tsConfigPaths,
-//     nitro (build-only using cloudflare as a default target), VITE_* env injection, @ path alias,
-//     React/TanStack dedupe, error logger plugins, and sandbox detection (port/host/strictPort).
-// You can pass additional config via defineConfig({ vite: { ... }, etc... }) if needed.
-import { defineConfig } from "@lovable.dev/vite-tanstack-config";
+import path from "node:path";
+import tailwindcss from "@tailwindcss/vite";
+import { tanstackRouter } from "@tanstack/router-plugin/vite";
+import react from "@vitejs/plugin-react";
+import { defineConfig } from "vite";
 
 export default defineConfig({
-  tanstackStart: {
-    // Redirect TanStack Start's bundled server entry to src/server.ts (our SSR error wrapper).
-    // nitro/vite builds from this
-    server: { entry: "server" },
+  plugins: [
+    // Must come before the React plugin so generated routes are in place first.
+    tanstackRouter({ target: "react", autoCodeSplitting: true }),
+    react(),
+    tailwindcss(),
+  ],
+  // 5173 is usually taken by other local projects.
+  server: { port: 5180, strictPort: true },
+  preview: { port: 5180 },
+  build: {
+    rolldownOptions: {
+      output: {
+        // Firebase is most of the JS weight and changes rarely — cache it separately.
+        codeSplitting: {
+          groups: [
+            { name: "firebase", test: /node_modules[\\/]@?firebase/ },
+            { name: "react", test: /node_modules[\\/](react|react-dom|scheduler)[\\/]/ },
+          ],
+        },
+      },
+    },
+  },
+  resolve: {
+    alias: { "@": path.resolve(import.meta.dirname, "./src") },
   },
 });
