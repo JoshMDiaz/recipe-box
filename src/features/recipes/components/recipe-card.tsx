@@ -1,14 +1,33 @@
-import { Link } from "@tanstack/react-router";
+import { Link, useNavigate, useRouter } from "@tanstack/react-router";
+import { useRef, type MouseEvent } from "react";
 import { cn } from "@/lib/utils";
 import type { Recipe } from "../types";
 import { RecipeImage, RecipeMeta } from "./recipe-meta";
 
 /** Full recipe on a card — scrolls internally so you can cook straight from the carousel. */
 export function RecipeCard({ recipe, className }: { recipe: Recipe; className?: string }) {
+  const navigate = useNavigate();
+  const router = useRouter();
+  const target = { to: "/recipes/$recipeId", params: { recipeId: recipe.id } } as const;
+  const pressedAt = useRef({ x: 0, y: 0 });
+
+  // The whole card opens the recipe. A click handler rather than a link
+  // overlay, so the ingredients can still scroll inside the card. Keyboard
+  // and screen-reader users get the title link.
+  const open = (e: MouseEvent) => {
+    // Links handle themselves, and dragging to highlight text isn't a click.
+    const moved = Math.hypot(e.clientX - pressedAt.current.x, e.clientY - pressedAt.current.y);
+    if ((e.target as Element).closest("a") || moved > 5 || getSelection()?.toString()) return;
+    if (e.metaKey || e.ctrlKey) window.open(router.buildLocation(target).href, "_blank");
+    else void navigate(target);
+  };
+
   return (
     <article
+      onPointerDown={(e) => (pressedAt.current = { x: e.clientX, y: e.clientY })}
+      onClick={open}
       className={cn(
-        "flex flex-col overflow-hidden rounded-3xl border bg-card text-card-foreground shadow-sm transition-shadow hover:shadow-md",
+        "group flex cursor-pointer flex-col overflow-hidden rounded-3xl border bg-card text-card-foreground shadow-sm transition-shadow hover:shadow-md",
         className,
       )}
     >
@@ -20,7 +39,7 @@ export function RecipeCard({ recipe, className }: { recipe: Recipe; className?: 
           <Link
             to="/recipes/$recipeId"
             params={{ recipeId: recipe.id }}
-            className="rounded-sm hover:text-primary focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
+            className="rounded-sm group-hover:text-primary focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
           >
             {recipe.title}
           </Link>
