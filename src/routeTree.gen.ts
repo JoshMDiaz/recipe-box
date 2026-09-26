@@ -9,68 +9,115 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as IndexRouteImport } from './routes/index'
-import { Route as RecipesRecipeIdRouteImport } from './routes/recipes.$recipeId'
+import { Route as AuthedRouteImport } from './routes/_authed'
+import { Route as SignInRouteImport } from './routes/sign-in'
+import { Route as AuthedIndexRouteImport } from './routes/_authed/index'
+import { Route as AuthedRecipesRecipeIdRouteImport } from './routes/_authed/recipes.$recipeId'
 
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
+const AuthedRoute = AuthedRouteImport.update({
+  id: '/_authed',
   getParentRoute: () => rootRouteImport,
 } as any)
-const RecipesRecipeIdRoute = RecipesRecipeIdRouteImport.update({
+const SignInRoute = SignInRouteImport.update({
+  id: '/sign-in',
+  path: '/sign-in',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthedIndexRoute = AuthedIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AuthedRoute,
+} as any)
+const AuthedRecipesRecipeIdRoute = AuthedRecipesRecipeIdRouteImport.update({
   id: '/recipes/$recipeId',
   path: '/recipes/$recipeId',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => AuthedRoute,
 } as any)
 
 export interface FileRoutesByFullPath {
-  '/': typeof IndexRoute
-  '/recipes/$recipeId': typeof RecipesRecipeIdRoute
+  '/': typeof AuthedIndexRoute
+  '/sign-in': typeof SignInRoute
+  '/recipes/$recipeId': typeof AuthedRecipesRecipeIdRoute
 }
 export interface FileRoutesByTo {
-  '/': typeof IndexRoute
-  '/recipes/$recipeId': typeof RecipesRecipeIdRoute
+  '/sign-in': typeof SignInRoute
+  '/': typeof AuthedIndexRoute
+  '/recipes/$recipeId': typeof AuthedRecipesRecipeIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
-  '/': typeof IndexRoute
-  '/recipes/$recipeId': typeof RecipesRecipeIdRoute
+  '/_authed': typeof AuthedRouteWithChildren
+  '/sign-in': typeof SignInRoute
+  '/_authed/': typeof AuthedIndexRoute
+  '/_authed/recipes/$recipeId': typeof AuthedRecipesRecipeIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/recipes/$recipeId'
+  fullPaths: '/' | '/sign-in' | '/recipes/$recipeId'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/recipes/$recipeId'
-  id: '__root__' | '/' | '/recipes/$recipeId'
+  to: '/sign-in' | '/' | '/recipes/$recipeId'
+  id:
+    | '__root__'
+    | '/_authed'
+    | '/sign-in'
+    | '/_authed/'
+    | '/_authed/recipes/$recipeId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
-  IndexRoute: typeof IndexRoute
-  RecipesRecipeIdRoute: typeof RecipesRecipeIdRoute
+  AuthedRoute: typeof AuthedRouteWithChildren
+  SignInRoute: typeof SignInRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/': {
-      id: '/'
-      path: '/'
+    '/_authed': {
+      id: '/_authed'
+      path: ''
       fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
+      preLoaderRoute: typeof AuthedRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/recipes/$recipeId': {
-      id: '/recipes/$recipeId'
+    '/sign-in': {
+      id: '/sign-in'
+      path: '/sign-in'
+      fullPath: '/sign-in'
+      preLoaderRoute: typeof SignInRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authed/': {
+      id: '/_authed/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof AuthedIndexRouteImport
+      parentRoute: typeof AuthedRoute
+    }
+    '/_authed/recipes/$recipeId': {
+      id: '/_authed/recipes/$recipeId'
       path: '/recipes/$recipeId'
       fullPath: '/recipes/$recipeId'
-      preLoaderRoute: typeof RecipesRecipeIdRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof AuthedRecipesRecipeIdRouteImport
+      parentRoute: typeof AuthedRoute
     }
   }
 }
 
+interface AuthedRouteChildren {
+  AuthedIndexRoute: typeof AuthedIndexRoute
+  AuthedRecipesRecipeIdRoute: typeof AuthedRecipesRecipeIdRoute
+}
+
+const AuthedRouteChildren: AuthedRouteChildren = {
+  AuthedIndexRoute: AuthedIndexRoute,
+  AuthedRecipesRecipeIdRoute: AuthedRecipesRecipeIdRoute,
+}
+
+const AuthedRouteWithChildren =
+  AuthedRoute._addFileChildren(AuthedRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
-  IndexRoute: IndexRoute,
-  RecipesRecipeIdRoute: RecipesRecipeIdRoute,
+  AuthedRoute: AuthedRouteWithChildren,
+  SignInRoute: SignInRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

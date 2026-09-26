@@ -6,9 +6,20 @@ import {
   useRouter,
   type ErrorComponentProps,
 } from "@tanstack/react-router";
-import { CookingPotIcon } from "lucide-react";
+import { CookingPotIcon, LogOutIcon } from "lucide-react";
+import { toast } from "sonner";
 import { Button, buttonVariants } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Toaster } from "@/components/ui/sonner";
+import { signOut, useUser } from "@/features/auth/auth";
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
   component: RootLayout,
@@ -25,11 +36,55 @@ function RootLayout() {
             <CookingPotIcon className="size-5 text-primary" aria-hidden />
             Recipe Box
           </Link>
+          <UserMenu />
         </div>
       </header>
       <Outlet />
       <Toaster position="top-center" />
     </>
+  );
+}
+
+function UserMenu() {
+  const user = useUser();
+  if (!user) return null;
+  const name = user.displayName ?? user.email ?? "Account";
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger
+        render={<Button variant="ghost" size="icon-lg" className="ml-auto rounded-full" />}
+        aria-label="Account"
+      >
+        {user.photoURL ? (
+          <img
+            src={user.photoURL}
+            alt=""
+            referrerPolicy="no-referrer"
+            className="size-8 rounded-full object-cover"
+          />
+        ) : (
+          <span className="flex size-8 items-center justify-center rounded-full bg-primary text-sm font-semibold text-primary-foreground">
+            {name.charAt(0).toUpperCase()}
+          </span>
+        )}
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-56">
+        <DropdownMenuGroup>
+          <DropdownMenuLabel className="truncate">{user.email ?? name}</DropdownMenuLabel>
+        </DropdownMenuGroup>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem
+          onClick={() =>
+            signOut().catch((err: Error) =>
+              toast.error("Couldn't sign out", { description: err.message }),
+            )
+          }
+        >
+          <LogOutIcon /> Sign out
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
 

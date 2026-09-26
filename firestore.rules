@@ -1,9 +1,7 @@
 rules_version = '2';
 
-// No auth yet: anyone with the app can read and write recipes. Writes are
-// shape-checked so the collection can't be filled with junk. Before this goes
-// to a real Firebase project with real users, add Firebase Auth and scope
-// recipes to request.auth.uid.
+// Each user's recipes live at users/{uid}/recipes, and only that signed-in
+// user can read or write them. Writes are also shape-checked.
 service cloud.firestore {
   match /databases/{database}/documents {
     function isValidRecipe(data) {
@@ -17,13 +15,18 @@ service cloud.firestore {
         && (!('sourceText' in data) || data.sourceText.size() <= 50000);
     }
 
-    match /recipes/{recipeId} {
-      allow read: if true;
-      allow create: if isValidRecipe(request.resource.data)
+    function isOwner(uid) {
+      return request.auth != null && request.auth.uid == uid;
+    }
+
+    match /users/{uid}/recipes/{recipeId} {
+      allow read, delete: if isOwner(uid);
+      allow create: if isOwner(uid)
+        && isValidRecipe(request.resource.data)
         && request.resource.data.createdAt == request.time;
-      allow update: if isValidRecipe(request.resource.data)
+      allow update: if isOwner(uid)
+        && isValidRecipe(request.resource.data)
         && request.resource.data.createdAt == resource.data.createdAt;
-      allow delete: if true;
     }
 
     match /{document=**} {

@@ -21,7 +21,7 @@ import { recipeQuery, recipesQuery, useDeleteRecipe } from "@/features/recipes/q
 import type { Recipe } from "@/features/recipes/types";
 import { cn } from "@/lib/utils";
 
-export const Route = createFileRoute("/recipes/$recipeId")({
+export const Route = createFileRoute("/_authed/recipes/$recipeId")({
   loader: async ({ context: { queryClient }, params: { recipeId } }) => {
     // Seed from the list cache when we came from the home page.
     const cached = queryClient.getQueryData(recipesQuery.queryKey)?.find((r) => r.id === recipeId);
