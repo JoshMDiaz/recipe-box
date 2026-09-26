@@ -31,6 +31,9 @@ dist-ssr
 *.sln
 *.sw?
 
+# Vercel
+.vercel/
+
 # Firebase
 .firebase/
 .emulator-data/

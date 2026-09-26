@@ -66,12 +66,22 @@ firestore.rules            # Security rules for recipes
 tests/rules/               # Security rules tests (pnpm test:rules)
 ```
 
-## Connecting a real Firebase project
+## Deploying
 
-1. Create a project at https://console.firebase.google.com. Enable **Firestore**, and under **Authentication**, turn on the **Google** sign-in provider. If you serve the app from a domain other than the default `*.web.app` / `*.firebaseapp.com`, add it under Authentication → Settings → Authorized domains.
-2. Add a Web app, then copy its config into `.env.production.local` (use `.env.example` as the template).
-3. Point the CLI at the project: `pnpm firebase use --add`.
-4. Deploy: `pnpm build && pnpm firebase deploy`. This deploys Hosting and the Firestore rules and indexes.
+The site is hosted on **Vercel**. Firebase provides sign-in and the database. The Firebase project is `recipe-box-70481`, which is the `prod` alias in `.firebaserc`.
+
+**Site (Vercel).** Import the GitHub repo into Vercel. `vercel.json` sets the build and sends every page to `index.html`, so the app handles its own routes. Under Project Settings → Environment Variables, add the four `VITE_FIREBASE_*` values from `.env.example`, filled in from Firebase console → Project settings → Your apps. Each push to `main` then deploys.
+
+**Sign-in domains.** Firebase only allows sign-in from domains on its list. Under Authentication → Settings → Authorized domains, add the production `*.vercel.app` address and any custom domain. Preview deployments get random URLs, so sign-in won't work on them.
+
+**Database rules (Firebase CLI).** Vercel doesn't deploy these, so run the following whenever `firestore.rules` or `firestore.indexes.json` changes:
+
+```sh
+pnpm firebase login   # once
+pnpm deploy:rules
+```
+
+To test a production build locally against the real project, put the same values in `.env.production.local` (it's git-ignored), then run `pnpm build && pnpm preview`.
 
 Each user's recipes are stored at `users/{uid}/recipes/{recipeId}`, and the rules only let the signed-in owner read or write them. Photos are shrunk to about 800px in the browser and saved on the recipe itself, so the app needs no Cloud Storage and runs on the free Spark plan.
 

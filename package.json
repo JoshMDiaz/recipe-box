@@ -12,6 +12,7 @@
     "dev:web": "vite",
     "emulators": "firebase emulators:start --only auth,firestore --project demo-recipe-box --import ./.emulator-data --export-on-exit",
     "build": "tsc -b && vite build",
+    "deploy:rules": "firebase deploy --only firestore --project prod",
     "preview": "vite preview",
     "typecheck": "tsc -b",
     "lint": "eslint .",

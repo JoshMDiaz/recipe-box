@@ -23,7 +23,7 @@ Vite single-page app (originally a Lovable prototype). Read README.md for the ov
   - Firestore on :8080
   - Emulator UI on :4000
   - Vite on **:5180**. Port 5173 is taken by other projects.
-- Dev runs against the `demo-recipe-box` project, which exists only in the emulators. There is no real Firebase project yet.
+- Dev runs against the `demo-recipe-box` project, which exists only in the emulators and never touches production.
 - Emulator data is saved to `.emulator-data/` only when the dev server stops cleanly (Ctrl-C). If the process is killed, the session's data is lost.
 - Sign-in in dev goes through the Auth emulator's fake Google account picker.
 - Before finishing a change, run `pnpm typecheck`, `pnpm lint`, and `pnpm test --run`. If the rules changed, also run `pnpm test:rules`. It starts its own emulators, so stop `pnpm dev` first (same ports).
@@ -49,7 +49,13 @@ Vite single-page app (originally a Lovable prototype). Read README.md for the ov
 - The rules live in `firestore.rules`, with tests in `tests/rules/`.
 - **A new recipe field must also be added to the `hasOnly` key list in the rules**, or writes will be rejected.
 
+## Deploying
+
+- The site is hosted on Vercel, configured in `vercel.json`. It rewrites every path except `/assets/` to `index.html`. Each push to `main` deploys.
+- The Firebase project is `recipe-box-70481`, the `prod` alias in `.firebaserc`. `default` stays `demo-recipe-box`, so a command without a project named can't touch production.
+- Vercel doesn't deploy the Firestore rules. After changing `firestore.rules` or the indexes, remind the user to run `pnpm deploy:rules`. It needs their `firebase login`, so don't run it for them unless asked.
+- The Firebase web config values are public by design. Locally they live in `.env.production.local` (git-ignored); on Vercel they're environment variables.
+
 ## Known gaps and next work
 
-- **No real Firebase project yet.** Deploy steps are in the README.
 - **The parser is heuristic.** A later idea is AI- or URL-based import through a Cloud Function.
