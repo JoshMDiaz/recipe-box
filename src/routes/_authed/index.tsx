@@ -20,7 +20,7 @@ const searchSchema = z.object({
   tag: z.string().optional().catch(undefined),
 });
 
-export const Route = createFileRoute("/")({
+export const Route = createFileRoute("/_authed/")({
   validateSearch: searchSchema,
   loader: ({ context }) => context.queryClient.ensureQueryData(recipesQuery),
   pendingComponent: HomeSkeleton,

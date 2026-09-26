@@ -15,11 +15,13 @@ import {
   type DocumentSnapshot,
 } from "firebase/firestore";
 import { deleteObject, getDownloadURL, ref, uploadBytes } from "firebase/storage";
+import { requireUid } from "@/features/auth/auth";
 import { db, storage } from "@/lib/firebase";
 import { compressImage } from "./image";
 import { recipeSchema, type Recipe, type RecipeInput } from "./types";
 
-const recipes = collection(db, "recipes");
+/** Each user's recipes live under their own document, so the rules can check ownership by path. */
+const recipes = () => collection(db, "users", requireUid(), "recipes");
 
 function fromSnapshot(snap: DocumentSnapshot): Recipe {
   const data = snap.data({ serverTimestamps: "estimate" }) ?? {};
@@ -52,7 +54,7 @@ function clean(input: RecipeInput): RecipeInput {
 async function uploadPhoto(recipeId: string, file: File) {
   const blob = await compressImage(file);
   const ext = blob.type === "image/webp" ? "webp" : (file.name.split(".").pop() ?? "jpg");
-  const path = `recipes/${recipeId}/${crypto.randomUUID()}.${ext}`;
+  const path = `users/${requireUid()}/recipes/${recipeId}/${crypto.randomUUID()}.${ext}`;
   const objectRef = ref(storage, path);
   await uploadBytes(objectRef, blob, { contentType: blob.type || file.type });
   return { imagePath: path, imageUrl: await getDownloadURL(objectRef) };
@@ -69,17 +71,17 @@ async function removePhoto(path?: string) {
 }
 
 export async function listRecipes(): Promise<Recipe[]> {
-  const snap = await getDocs(query(recipes, orderBy("createdAt", "desc")));
+  const snap = await getDocs(query(recipes(), orderBy("createdAt", "desc")));
   return snap.docs.map(fromSnapshot);
 }
 
 export async function getRecipe(id: string): Promise<Recipe | null> {
-  const snap = await getDoc(doc(recipes, id));
+  const snap = await getDoc(doc(recipes(), id));
   return snap.exists() ? fromSnapshot(snap) : null;
 }
 
 export async function createRecipe(input: RecipeInput, photo?: File): Promise<string> {
-  const docRef = doc(recipes);
+  const docRef = doc(recipes());
   const upload = photo ? await uploadPhoto(docRef.id, photo) : {};
   await setDoc(docRef, {
     ...clean(input),
@@ -109,7 +111,7 @@ export async function updateRecipe(existing: Recipe, input: RecipeInput, photo?:
   );
   for (const k of ["imageUrl", "imagePath"] as const) if (!(k in image)) patch[k] = deleteField();
 
-  await updateDoc(doc(recipes, existing.id), { ...patch, updatedAt: serverTimestamp() });
+  await updateDoc(doc(recipes(), existing.id), { ...patch, updatedAt: serverTimestamp() });
   if (photo !== undefined && existing.imagePath !== image.imagePath) {
     await removePhoto(existing.imagePath);
   }
@@ -117,13 +119,13 @@ export async function updateRecipe(existing: Recipe, input: RecipeInput, photo?:
 
 export async function deleteRecipe(recipe: Recipe) {
   await removePhoto(recipe.imagePath);
-  await deleteDoc(doc(recipes, recipe.id));
+  await deleteDoc(doc(recipes(), recipe.id));
 }
 
 export async function seedRecipes(list: RecipeInput[]) {
   const batch = writeBatch(db);
   for (const r of list) {
-    batch.set(doc(recipes), {
+    batch.set(doc(recipes()), {
       ...clean(r),
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),

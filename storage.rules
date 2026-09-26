@@ -1,13 +1,19 @@
 rules_version = '2';
 
-// Recipe photos only: images under 10 MB. Same no-auth caveat as firestore.rules.
+// Recipe photos, stored per user: images under 10 MB, readable and writable
+// only by their owner. (Anyone holding a download URL can still fetch the
+// image; that's how getDownloadURL works.)
 service firebase.storage {
   match /b/{bucket}/o {
-    match /recipes/{recipeId}/{fileName} {
-      allow read: if true;
-      allow create: if request.resource.size < 10 * 1024 * 1024
+    match /users/{uid}/recipes/{recipeId}/{fileName} {
+      function isOwner() {
+        return request.auth != null && request.auth.uid == uid;
+      }
+
+      allow read, delete: if isOwner();
+      allow create: if isOwner()
+        && request.resource.size < 10 * 1024 * 1024
         && request.resource.contentType.matches('image/.*');
-      allow delete: if true;
     }
   }
 }
