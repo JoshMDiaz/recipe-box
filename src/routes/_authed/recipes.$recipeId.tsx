@@ -1,6 +1,6 @@
 import { useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute, Link, notFound, useNavigate } from "@tanstack/react-router";
-import { ArrowLeftIcon, PencilIcon, Trash2Icon } from "lucide-react";
+import { ArrowLeftIcon, PencilIcon, RotateCcwIcon, Trash2Icon } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import {
@@ -144,6 +144,17 @@ function RecipeDetail() {
               </section>
             )}
           </div>
+
+          {done.size > 0 && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="rounded-full"
+              onClick={() => setDone(new Set())}
+            >
+              <RotateCcwIcon data-icon="inline-start" /> Uncheck all
+            </Button>
+          )}
 
           {recipe.sourceText && (
             <details className="rounded-xl border p-4 text-sm">
