@@ -1,22 +1,12 @@
 import { useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute, Link, notFound, useNavigate } from "@tanstack/react-router";
-import { ArrowLeftIcon, PencilIcon, RotateCcwIcon, Trash2Icon } from "lucide-react";
+import { CheckIcon, ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { Button, buttonVariants } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Group, headerAction, Row } from "@/components/grouped";
+import { ConfirmSheet } from "@/components/sheet";
 import { EditRecipeDialog } from "@/features/recipes/components/edit-recipe-dialog";
-import { RecipeImage, RecipeMeta } from "@/features/recipes/components/recipe-meta";
+import { RecipeHero, TagPills } from "@/features/recipes/components/recipe-meta";
 import { recipeQuery, recipesQuery, useDeleteRecipe } from "@/features/recipes/queries";
 import type { Recipe } from "@/features/recipes/types";
 import { cn } from "@/lib/utils";
@@ -33,10 +23,14 @@ export const Route = createFileRoute("/_authed/recipes/$recipeId")({
   component: RecipeDetail,
 });
 
+const shell =
+  "mx-auto min-h-dvh w-full max-w-md px-4 pt-[max(env(safe-area-inset-top),12px)] pb-[max(env(safe-area-inset-bottom),32px)] md:max-w-4xl";
+
 function RecipeDetail() {
   const { recipeId } = Route.useParams();
   const { data: recipe } = useSuspenseQuery(recipeQuery(recipeId));
   const [editing, setEditing] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [done, setDone] = useState<Set<string>>(new Set());
 
   const toggle = (key: string) =>
@@ -45,180 +39,254 @@ function RecipeDetail() {
       if (!next.delete(key)) next.add(key);
       return next;
     });
+  /** Uncheck every item in one list ("i" ingredients, "s" steps). */
+  const reset = (prefix: string) =>
+    setDone((prev) => new Set([...prev].filter((k) => !k.startsWith(prefix))));
+  const countDone = (prefix: string) => [...done].filter((k) => k.startsWith(prefix)).length;
 
   // The loader 404s missing recipes, so this only happens mid-delete.
   if (!recipe) return null;
 
+  const ingredientsDone = countDone("i");
+  const stepsDone = countDone("s");
+
   return (
-    <main className="mx-auto max-w-4xl px-4 pt-4 pb-16">
-      <div className="flex items-center justify-between gap-2">
-        <Link to="/" className={buttonVariants({ variant: "ghost", className: "-ml-2" })}>
-          <ArrowLeftIcon data-icon="inline-start" /> All recipes
+    <main className={shell}>
+      <nav className="flex min-h-11 items-center justify-between gap-2 pt-1">
+        <Link
+          to="/"
+          className="-ml-1.5 flex items-center rounded-md text-[17px] text-blue focus-visible:ring-2 focus-visible:ring-blue/40 focus-visible:outline-none active:opacity-50"
+        >
+          <ChevronLeftIcon className="size-7" strokeWidth={2.25} aria-hidden /> Recipes
         </Link>
-        <div className="flex gap-1">
-          <Button variant="outline" onClick={() => setEditing(true)}>
-            <PencilIcon data-icon="inline-start" /> Edit
-          </Button>
-          <DeleteButton recipe={recipe} />
-        </div>
-      </div>
+        <button
+          type="button"
+          onClick={() => setEditing(true)}
+          className="rounded-md text-[17px] text-blue focus-visible:ring-2 focus-visible:ring-blue/40 focus-visible:outline-none active:opacity-50"
+        >
+          Edit
+        </button>
+      </nav>
 
-      <article className="mt-4 overflow-hidden rounded-3xl border bg-card shadow-sm">
-        <RecipeImage recipe={recipe} className="h-56 sm:h-80" />
-        <div className="space-y-4 p-5 sm:p-8">
-          <h1 className="font-heading text-3xl leading-tight font-semibold sm:text-4xl">
-            {recipe.title}
-          </h1>
-          <RecipeMeta recipe={recipe} />
-          {recipe.description && (
-            <p className="text-pretty text-muted-foreground">{recipe.description}</p>
-          )}
+      <article className="mt-2">
+        <RecipeHero
+          recipe={recipe}
+          large
+          title={<h1>{recipe.title}</h1>}
+          className="aspect-[1.35/1] animate-rise rounded-[26px] shadow-[0_18px_40px_-18px_rgba(0,0,0,0.55)] sm:aspect-auto sm:h-80"
+        />
 
-          <div className="grid gap-8 pt-2 md:grid-cols-[2fr_3fr]">
-            {recipe.ingredients.length > 0 && (
-              <section>
-                <h2 className="mb-2 text-xs font-semibold tracking-wide text-primary uppercase">
-                  Ingredients
-                </h2>
-                <ul className="space-y-1">
-                  {recipe.ingredients.map((item, i) => {
-                    const key = `i${i}`;
-                    return (
-                      <li key={key}>
-                        <label className="flex cursor-pointer items-start gap-3 rounded-lg p-1.5 hover:bg-muted/60">
-                          <input
-                            type="checkbox"
-                            checked={done.has(key)}
-                            onChange={() => toggle(key)}
-                            className="mt-1 size-4 shrink-0 accent-primary"
-                          />
-                          <span
-                            className={cn(done.has(key) && "text-muted-foreground line-through")}
-                          >
-                            {item}
-                          </span>
-                        </label>
-                      </li>
-                    );
-                  })}
-                </ul>
-              </section>
+        {(recipe.description || recipe.tags.length > 0) && (
+          <div className="mt-4 space-y-3 px-1">
+            {recipe.description && (
+              <p className="text-[17px] leading-snug text-pretty text-label-2">
+                {recipe.description}
+              </p>
             )}
-            {recipe.steps.length > 0 && (
-              <section>
-                <h2 className="mb-2 text-xs font-semibold tracking-wide text-primary uppercase">
-                  Steps
-                </h2>
-                <ol className="space-y-2">
-                  {recipe.steps.map((step, i) => {
-                    const key = `s${i}`;
-                    return (
-                      <li key={key}>
-                        <button
-                          type="button"
-                          onClick={() => toggle(key)}
-                          aria-pressed={done.has(key)}
-                          className="flex w-full items-start gap-3 rounded-lg p-1.5 text-left hover:bg-muted/60"
-                        >
-                          <span
-                            className={cn(
-                              "flex size-6 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-semibold text-primary-foreground",
-                              done.has(key) && "bg-muted text-muted-foreground",
-                            )}
-                          >
-                            {i + 1}
-                          </span>
-                          <span
-                            className={cn(
-                              "pt-0.5",
-                              done.has(key) && "text-muted-foreground line-through",
-                            )}
-                          >
-                            {step}
-                          </span>
-                        </button>
-                      </li>
-                    );
-                  })}
-                </ol>
-              </section>
-            )}
+            <TagPills tags={recipe.tags} />
           </div>
+        )}
 
-          {done.size > 0 && (
-            <Button
-              variant="outline"
-              size="sm"
-              className="rounded-full"
-              onClick={() => setDone(new Set())}
+        <div className="grid items-start md:grid-cols-[2fr_3fr] md:gap-6">
+          {recipe.ingredients.length > 0 && (
+            <Group
+              header={
+                <>
+                  Ingredients
+                  {ingredientsDone > 0 && (
+                    <span className="normal-case">
+                      {" "}
+                      · {ingredientsDone} of {recipe.ingredients.length}
+                    </span>
+                  )}
+                </>
+              }
+              action={
+                ingredientsDone > 0 && (
+                  <button type="button" className={headerAction} onClick={() => reset("i")}>
+                    Uncheck all
+                  </button>
+                )
+              }
             >
-              <RotateCcwIcon data-icon="inline-start" /> Uncheck all
-            </Button>
+              <ul className="divide-y divide-separator">
+                {recipe.ingredients.map((item, i) => {
+                  const key = `i${i}`;
+                  const checked = done.has(key);
+                  return (
+                    <li key={key}>
+                      <label className="flex min-h-12 cursor-pointer items-start gap-3 px-4 py-3 active:bg-fill has-focus-visible:bg-fill">
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          onChange={() => toggle(key)}
+                          className="sr-only"
+                        />
+                        <CheckCircle checked={checked} />
+                        <span
+                          className={cn(
+                            "text-[17px] leading-snug transition-colors",
+                            checked && "text-label-3 line-through",
+                          )}
+                        >
+                          {item}
+                        </span>
+                      </label>
+                    </li>
+                  );
+                })}
+              </ul>
+            </Group>
           )}
 
-          {recipe.sourceText && (
-            <details className="rounded-xl border p-4 text-sm">
-              <summary className="cursor-pointer font-medium">Original text</summary>
-              <pre className="mt-3 font-sans whitespace-pre-wrap text-muted-foreground">
+          {recipe.steps.length > 0 && (
+            <Group
+              header={
+                <>
+                  Steps
+                  {stepsDone > 0 && (
+                    <span className="normal-case">
+                      {" "}
+                      · {stepsDone} of {recipe.steps.length}
+                    </span>
+                  )}
+                </>
+              }
+              action={
+                stepsDone > 0 && (
+                  <button type="button" className={headerAction} onClick={() => reset("s")}>
+                    Uncheck all
+                  </button>
+                )
+              }
+            >
+              <ol className="divide-y divide-separator">
+                {recipe.steps.map((step, i) => {
+                  const key = `s${i}`;
+                  const checked = done.has(key);
+                  return (
+                    <li key={key}>
+                      <button
+                        type="button"
+                        onClick={() => toggle(key)}
+                        aria-pressed={checked}
+                        className="flex w-full items-start gap-3 px-4 py-3 text-left focus-visible:bg-fill focus-visible:outline-none active:bg-fill"
+                      >
+                        <span
+                          className={cn(
+                            "flex size-7 shrink-0 items-center justify-center rounded-full font-rounded text-[15px] font-bold tabular-nums transition-colors",
+                            checked ? "bg-green text-white" : "bg-blue text-white",
+                          )}
+                        >
+                          {checked ? (
+                            <CheckIcon className="size-4" strokeWidth={3} aria-hidden />
+                          ) : (
+                            i + 1
+                          )}
+                        </span>
+                        <span
+                          className={cn(
+                            "pt-0.5 text-[17px] leading-snug transition-colors",
+                            checked && "text-label-3 line-through",
+                          )}
+                        >
+                          {step}
+                        </span>
+                      </button>
+                    </li>
+                  );
+                })}
+              </ol>
+            </Group>
+          )}
+        </div>
+
+        {recipe.sourceText && (
+          <Group>
+            <details className="group/details">
+              <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between gap-3 px-4 text-[17px] active:bg-fill [&::-webkit-details-marker]:hidden">
+                Original Text
+                <ChevronRightIcon
+                  className="size-5 text-label-3 transition-transform group-open/details:rotate-90"
+                  aria-hidden
+                />
+              </summary>
+              <pre className="border-t border-separator px-4 py-3 font-sans text-[15px] whitespace-pre-wrap text-label-2">
                 {recipe.sourceText}
               </pre>
             </details>
-          )}
-        </div>
+          </Group>
+        )}
+
+        <Group>
+          <Row destructive onClick={() => setDeleting(true)}>
+            Delete Recipe
+          </Row>
+        </Group>
       </article>
 
       <EditRecipeDialog recipe={recipe} open={editing} onOpenChange={setEditing} />
+      <DeleteSheet recipe={recipe} open={deleting} onOpenChange={setDeleting} />
     </main>
   );
 }
 
-function DeleteButton({ recipe }: { recipe: Recipe }) {
+/** The round check from iOS Reminders. */
+function CheckCircle({ checked }: { checked: boolean }) {
+  return (
+    <span
+      aria-hidden
+      className={cn(
+        "mt-px flex size-6 shrink-0 items-center justify-center rounded-full border-2 transition-colors",
+        checked ? "border-green bg-green text-white" : "border-label-3",
+      )}
+    >
+      {checked && <CheckIcon className="size-3.5" strokeWidth={3.5} />}
+    </span>
+  );
+}
+
+function DeleteSheet({
+  recipe,
+  open,
+  onOpenChange,
+}: {
+  recipe: Recipe;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const del = useDeleteRecipe();
-  const [open, setOpen] = useState(false);
   return (
-    <>
-      <Button variant="ghost" className="text-destructive" onClick={() => setOpen(true)}>
-        <Trash2Icon data-icon="inline-start" /> Delete
-      </Button>
-      <AlertDialog open={open} onOpenChange={setOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete “{recipe.title}”?</AlertDialogTitle>
-            <AlertDialogDescription>This removes the recipe for good.</AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              variant="destructive"
-              disabled={del.isPending}
-              onClick={() =>
-                del.mutate(recipe, {
-                  onSuccess: async () => {
-                    toast.success("Recipe deleted");
-                    await navigate({ to: "/" });
-                    queryClient.removeQueries({ queryKey: recipeQuery(recipe.id).queryKey });
-                  },
-                  onError: (err) =>
-                    toast.error("Couldn't delete the recipe", { description: err.message }),
-                })
-              }
-            >
-              Delete
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    </>
+    <ConfirmSheet
+      open={open}
+      onOpenChange={onOpenChange}
+      title={`Delete “${recipe.title}”?`}
+      action="Delete Recipe"
+      pending={del.isPending}
+      onConfirm={() =>
+        del.mutate(recipe, {
+          onSuccess: async () => {
+            toast.success("Recipe deleted");
+            await navigate({ to: "/" });
+            queryClient.removeQueries({ queryKey: recipeQuery(recipe.id).queryKey });
+          },
+          onError: (err) => toast.error("Couldn't delete the recipe", { description: err.message }),
+        })
+      }
+    >
+      This removes the recipe for good. It can't be undone.
+    </ConfirmSheet>
   );
 }
 
 function DetailSkeleton() {
   return (
-    <main className="mx-auto max-w-4xl px-4 pt-4">
-      <Skeleton className="h-8 w-32" />
-      <Skeleton className="mt-4 h-[32rem] rounded-3xl" />
+    <main className={shell}>
+      <div className="mt-2 h-7 w-28 animate-pulse rounded-lg bg-fill" />
+      <div className="mt-3 aspect-[1.35/1] animate-pulse rounded-[26px] bg-fill sm:aspect-auto sm:h-80" />
+      <div className="mt-6 h-64 animate-pulse rounded-2xl bg-fill" />
     </main>
   );
 }

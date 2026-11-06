@@ -1,10 +1,9 @@
 import { createFileRoute, redirect, useRouter } from "@tanstack/react-router";
 import { FirebaseError } from "firebase/app";
-import { CookingPotIcon } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
-import { Button } from "@/components/ui/button";
+import { AppIcon } from "@/components/app-icon";
 import { getCurrentUser, safeRedirect, signInWithGoogle } from "@/features/auth/auth";
 
 const searchSchema = z.object({
@@ -43,18 +42,29 @@ function SignIn() {
   };
 
   return (
-    <main className="mx-auto flex max-w-sm flex-col items-center px-4 py-24 text-center">
-      <CookingPotIcon className="size-10 text-primary" aria-hidden />
-      <h1 className="mt-4 font-heading text-3xl font-semibold tracking-tight">
-        Welcome to Recipe Box
-      </h1>
-      <p className="mt-2 text-sm text-muted-foreground">
-        Sign in to save recipes and see them on any device.
-      </p>
-      <Button size="lg" className="mt-8 rounded-full px-5" disabled={pending} onClick={signIn}>
-        <GoogleIcon data-icon="inline-start" />
-        Continue with Google
-      </Button>
+    <main className="flex min-h-dvh items-center justify-center px-4 py-12">
+      <div className="w-full max-w-sm animate-rise space-y-6">
+        <div className="space-y-2 text-center">
+          <AppIcon className="mx-auto size-16" />
+          <h1 className="pt-2 text-[34px] font-bold tracking-tight">Recipe Box</h1>
+          <p className="text-[15px] text-label-2">Every recipe, one swipe away</p>
+        </div>
+
+        <div className="space-y-4 rounded-[26px] bg-surface p-6 text-center">
+          <p className="text-[15px] text-label-2">
+            Sign in to save recipes and see them on any device.
+          </p>
+          <button
+            type="button"
+            disabled={pending}
+            onClick={signIn}
+            className="flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-fill text-[17px] font-semibold transition-transform focus-visible:ring-2 focus-visible:ring-blue/40 focus-visible:outline-none active:scale-[0.985] disabled:opacity-50"
+          >
+            <GoogleIcon className="size-4" />
+            {pending ? "Signing in…" : "Continue with Google"}
+          </button>
+        </div>
+      </div>
     </main>
   );
 }

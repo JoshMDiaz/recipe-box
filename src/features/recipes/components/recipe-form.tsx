@@ -1,9 +1,8 @@
 import { ImagePlusIcon, Loader2Icon, XIcon } from "lucide-react";
-import { useEffect, useId, useMemo, useState, type FormEvent } from "react";
-import { Button } from "@/components/ui/button";
-import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
+import { useEffect, useId, useMemo, useState, type FormEvent, type ReactNode } from "react";
+import { Group, rowInput } from "@/components/grouped";
+import { NavButton, SheetNav } from "@/components/sheet";
+import { cn } from "@/lib/utils";
 import { formatDuration, parseDuration } from "../time";
 import type { RecipeInput } from "../types";
 
@@ -11,22 +10,28 @@ type Props = {
   initial: RecipeInput;
   /** Current photo URL when editing. */
   initialImageUrl?: string;
+  /** Sheet title, e.g. "Edit Recipe". */
+  title: string;
+  /** The nav bar's left button: Cancel or Back. */
+  left: ReactNode;
   submitLabel: string;
   pending: boolean;
   /** photo: File = new photo, null = remove, undefined = unchanged. */
   onSubmit: (input: RecipeInput, photo: File | null | undefined) => void;
-  secondaryAction?: React.ReactNode;
 };
 
 const toLines = (v: string) => v.split("\n");
 
+const textarea = cn(rowInput, "block resize-none leading-snug [field-sizing:content]");
+
 export function RecipeForm({
   initial,
   initialImageUrl,
+  title: sheetTitle,
+  left,
   submitLabel,
   pending,
   onSubmit,
-  secondaryAction,
 }: Props) {
   const id = useId();
   const [title, setTitle] = useState(initial.title);
@@ -43,17 +48,21 @@ export function RecipeForm({
   const [steps, setSteps] = useState(initial.steps.join("\n"));
   const [photo, setPhoto] = useState<File | null | undefined>(undefined);
   const [showErrors, setShowErrors] = useState(false);
+  const [shaking, setShaking] = useState(false);
 
   const previewUrl = useMemo(() => (photo ? URL.createObjectURL(photo) : null), [photo]);
   useEffect(() => () => void (previewUrl && URL.revokeObjectURL(previewUrl)), [previewUrl]);
   const shownImage = photo === null ? undefined : (previewUrl ?? initialImageUrl);
 
   const titleMissing = !title.trim();
+  const titleError = showErrors && titleMissing;
 
   const submit = (e: FormEvent) => {
     e.preventDefault();
     if (titleMissing) {
       setShowErrors(true);
+      setShaking(true);
+      document.getElementById(`${id}-title`)?.focus();
       return;
     }
     onSubmit(
@@ -75,169 +84,178 @@ export function RecipeForm({
 
   return (
     <form onSubmit={submit} noValidate>
-      <FieldGroup className="gap-4">
-        <Field data-invalid={showErrors && titleMissing}>
-          <FieldLabel htmlFor={`${id}-title`}>Title</FieldLabel>
-          <Input
-            id={`${id}-title`}
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            aria-invalid={showErrors && titleMissing}
-            maxLength={200}
-            autoComplete="off"
-          />
-          {showErrors && titleMissing && <FieldError>Give your recipe a name.</FieldError>}
-        </Field>
-
-        <Field>
-          <FieldLabel htmlFor={`${id}-desc`}>Description</FieldLabel>
-          <Textarea
-            id={`${id}-desc`}
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            rows={2}
-          />
-        </Field>
-
-        <div className="grid grid-cols-2 gap-3">
-          <Field>
-            <FieldLabel htmlFor={`${id}-serves`}>Serves</FieldLabel>
-            <Input
-              id={`${id}-serves`}
-              value={servings}
-              onChange={(e) => setServings(e.target.value)}
-              placeholder="4"
-            />
-          </Field>
-          <Field aria-labelledby={`${id}-time`}>
-            <FieldLabel id={`${id}-time`} htmlFor={`${id}-hours`}>
-              Total time
-            </FieldLabel>
-            <div className="grid grid-cols-2 gap-2">
-              <DurationInput
-                id={`${id}-hours`}
-                label="Hours"
-                unit="hr"
-                value={hours}
-                onChange={setHours}
-                placeholder="0"
-              />
-              <DurationInput
-                id={`${id}-minutes`}
-                label="Minutes"
-                unit="min"
-                value={minutes}
-                onChange={setMinutes}
-                placeholder="45"
-              />
-            </div>
-            {freeTextTime && !hours && !minutes && (
-              <FieldDescription>
-                Saved as “{freeTextTime}”.{" "}
-                <button
-                  type="button"
-                  className="underline underline-offset-2 hover:text-foreground"
-                  onClick={() => setFreeTextTime(undefined)}
-                >
-                  Clear
-                </button>
-              </FieldDescription>
-            )}
-          </Field>
-        </div>
-
-        <Field>
-          <FieldLabel htmlFor={`${id}-tags`}>Tags</FieldLabel>
-          <Input
-            id={`${id}-tags`}
-            value={tags}
-            onChange={(e) => setTags(e.target.value)}
-            placeholder="dinner, quick"
-          />
-          <FieldDescription>Separate with commas.</FieldDescription>
-        </Field>
-
-        <Field>
-          <FieldLabel htmlFor={`${id}-ing`}>Ingredients</FieldLabel>
-          <Textarea
-            id={`${id}-ing`}
-            value={ingredients}
-            onChange={(e) => setIngredients(e.target.value)}
-            rows={6}
-          />
-          <FieldDescription>One per line.</FieldDescription>
-        </Field>
-
-        <Field>
-          <FieldLabel htmlFor={`${id}-steps`}>Steps</FieldLabel>
-          <Textarea
-            id={`${id}-steps`}
-            value={steps}
-            onChange={(e) => setSteps(e.target.value)}
-            rows={6}
-          />
-          <FieldDescription>One per line.</FieldDescription>
-        </Field>
-
-        <Field>
-          <FieldLabel htmlFor={`${id}-photo`}>Photo</FieldLabel>
-          {shownImage ? (
-            <div className="relative">
-              <img src={shownImage} alt="" className="h-40 w-full rounded-xl object-cover" />
-              <Button
-                type="button"
-                variant="secondary"
-                size="icon-sm"
-                className="absolute top-2 right-2 rounded-full"
-                onClick={() => setPhoto(initialImageUrl ? null : undefined)}
-              >
-                <XIcon />
-                <span className="sr-only">Remove photo</span>
-              </Button>
-            </div>
-          ) : (
-            <label
-              htmlFor={`${id}-photo`}
-              className="flex h-24 cursor-pointer flex-col items-center justify-center gap-1 rounded-xl border border-dashed text-sm text-muted-foreground hover:bg-muted/50 has-focus-visible:ring-3 has-focus-visible:ring-ring/50"
-            >
-              <ImagePlusIcon className="size-5" />
-              Add a photo (optional)
-            </label>
-          )}
-          <input
-            id={`${id}-photo`}
-            type="file"
-            accept="image/*"
-            className="sr-only"
-            onChange={(e) => {
-              const file = e.target.files?.[0];
-              if (file) setPhoto(file);
-              e.target.value = "";
-            }}
-          />
-        </Field>
-
-        <div className="flex items-center justify-between gap-3 pt-1">
-          {secondaryAction ?? <span />}
-          <Button type="submit" size="lg" disabled={pending} className="rounded-full px-5">
-            {pending && <Loader2Icon className="animate-spin" data-icon="inline-start" />}
+      <SheetNav
+        left={left}
+        title={sheetTitle}
+        right={
+          <NavButton type="submit" bold disabled={pending}>
+            {pending && <Loader2Icon className="size-4 animate-spin" aria-hidden />}
             {pending ? "Saving…" : submitLabel}
-          </Button>
+          </NavButton>
+        }
+      />
+
+      <Group
+        className={cn("mt-3", shaking && "animate-shake")}
+        onAnimationEnd={() => setShaking(false)}
+        footer={titleError && <span className="text-red">Give your recipe a name.</span>}
+      >
+        <label htmlFor={`${id}-title`} className="sr-only">
+          Title
+        </label>
+        <input
+          id={`${id}-title`}
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          aria-invalid={titleError}
+          maxLength={200}
+          autoComplete="off"
+          placeholder="Title"
+          className={cn(rowInput, "text-[20px] font-semibold placeholder:font-normal")}
+        />
+        <label htmlFor={`${id}-desc`} className="sr-only">
+          Description
+        </label>
+        <textarea
+          id={`${id}-desc`}
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          rows={2}
+          placeholder="Description (optional)"
+          className={cn(textarea, "min-h-[4.5rem]")}
+        />
+      </Group>
+
+      <Group
+        header="Details"
+        footer={
+          freeTextTime &&
+          !hours &&
+          !minutes && (
+            <>
+              Time saved as “{freeTextTime}”.{" "}
+              <button
+                type="button"
+                className="font-medium text-blue"
+                onClick={() => setFreeTextTime(undefined)}
+              >
+                Clear
+              </button>
+            </>
+          )
+        }
+      >
+        <label className="flex min-h-12 items-center gap-3 pl-4">
+          <span className="shrink-0 text-[17px]">Serves</span>
+          <input
+            value={servings}
+            onChange={(e) => setServings(e.target.value)}
+            placeholder="4"
+            className={cn(rowInput, "text-right tabular-nums")}
+          />
+        </label>
+        <div
+          role="group"
+          aria-labelledby={`${id}-time`}
+          className="flex min-h-12 items-center gap-3 px-4"
+        >
+          <span id={`${id}-time`} className="flex-1 text-[17px]">
+            Total time
+          </span>
+          <DurationInput
+            label="Hours"
+            unit="hr"
+            value={hours}
+            onChange={setHours}
+            placeholder="0"
+          />
+          <DurationInput
+            label="Minutes"
+            unit="min"
+            value={minutes}
+            onChange={setMinutes}
+            placeholder="45"
+          />
         </div>
-      </FieldGroup>
+      </Group>
+
+      <Group header={<label htmlFor={`${id}-tags`}>Tags</label>} footer="Separate with commas.">
+        <input
+          id={`${id}-tags`}
+          value={tags}
+          onChange={(e) => setTags(e.target.value)}
+          placeholder="dinner, quick"
+          className={rowInput}
+        />
+      </Group>
+
+      <Group header={<label htmlFor={`${id}-ing`}>Ingredients</label>} footer="One per line.">
+        <textarea
+          id={`${id}-ing`}
+          value={ingredients}
+          onChange={(e) => setIngredients(e.target.value)}
+          rows={6}
+          placeholder={"2 cups flour\n1 tsp salt"}
+          className={cn(textarea, "min-h-36")}
+        />
+      </Group>
+
+      <Group header={<label htmlFor={`${id}-steps`}>Steps</label>} footer="One per line.">
+        <textarea
+          id={`${id}-steps`}
+          value={steps}
+          onChange={(e) => setSteps(e.target.value)}
+          rows={6}
+          placeholder={"Preheat the oven.\nMix everything together."}
+          className={cn(textarea, "min-h-36")}
+        />
+      </Group>
+
+      <Group header="Photo" className="mb-4">
+        {shownImage ? (
+          <div className="relative">
+            <img src={shownImage} alt="" className="h-44 w-full object-cover" />
+            <button
+              type="button"
+              className="absolute top-2.5 right-2.5 flex size-8 items-center justify-center rounded-full bg-black/45 text-white backdrop-blur-sm active:scale-90"
+              onClick={() => setPhoto(initialImageUrl ? null : undefined)}
+            >
+              <XIcon className="size-4" strokeWidth={2.5} />
+              <span className="sr-only">Remove photo</span>
+            </button>
+          </div>
+        ) : (
+          <label
+            htmlFor={`${id}-photo`}
+            className="flex min-h-12 cursor-pointer items-center gap-3 px-4 text-[17px] text-blue active:bg-fill has-focus-visible:bg-fill"
+          >
+            <ImagePlusIcon className="size-5" aria-hidden />
+            Add Photo
+          </label>
+        )}
+        <input
+          id={`${id}-photo`}
+          type="file"
+          accept="image/*"
+          className="sr-only"
+          onChange={(e) => {
+            const file = e.target.files?.[0];
+            if (file) setPhoto(file);
+            e.target.value = "";
+          }}
+        />
+      </Group>
     </form>
   );
 }
 
 function DurationInput({
-  id,
   label,
   unit,
   value,
   onChange,
   placeholder,
 }: {
-  id: string;
   label: string;
   unit: string;
   value: string;
@@ -245,9 +263,8 @@ function DurationInput({
   placeholder: string;
 }) {
   return (
-    <div className="relative">
-      <Input
-        id={id}
+    <label className="flex h-9 items-center gap-1 rounded-lg bg-fill pr-2.5 focus-within:ring-2 focus-within:ring-blue/40">
+      <input
         type="number"
         inputMode="numeric"
         min={0}
@@ -257,11 +274,9 @@ function DurationInput({
         // Whole, non-negative numbers only.
         onChange={(e) => onChange(e.target.value.replace(/\D/g, ""))}
         placeholder={placeholder}
-        className="[appearance:textfield] pr-9 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+        className="w-12 bg-transparent pl-2.5 text-right text-[17px] tabular-nums outline-none placeholder:text-label-3"
       />
-      <span className="pointer-events-none absolute top-1/2 right-2.5 -translate-y-1/2 text-sm text-muted-foreground">
-        {unit}
-      </span>
-    </div>
+      <span className="text-[15px] text-label-2">{unit}</span>
+    </label>
   );
 }

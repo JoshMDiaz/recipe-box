@@ -1,16 +1,8 @@
 import { useNavigate } from "@tanstack/react-router";
-import { ArrowLeftIcon, SparklesIcon } from "lucide-react";
+import { ChevronLeftIcon, SparklesIcon } from "lucide-react";
 import { useId, useState } from "react";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Textarea } from "@/components/ui/textarea";
+import { NavButton, Sheet, SheetNav } from "@/components/sheet";
 import { parseRecipeText } from "../parser";
 import { useCreateRecipe } from "../queries";
 import { SAMPLE_RECIPE_TEXT } from "../seed";
@@ -27,12 +19,10 @@ export function AddRecipeDialog({
   onOpenChange: (open: boolean) => void;
 }) {
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-lg">
-        {/* Remount on each open so the dialog always starts at the paste step. */}
-        {open && <AddRecipeFlow onDone={() => onOpenChange(false)} />}
-      </DialogContent>
-    </Dialog>
+    <Sheet open={open} onOpenChange={onOpenChange} title="Add a recipe">
+      {/* The sheet unmounts its content once closed, so each open starts at the paste step. */}
+      <AddRecipeFlow onDone={() => onOpenChange(false)} />
+    </Sheet>
   );
 }
 
@@ -58,71 +48,85 @@ function AddRecipeFlow({ onDone }: { onDone: () => void }) {
 
   if (draft) {
     return (
-      <>
-        <DialogHeader>
-          <DialogTitle className="font-heading text-2xl">Check the details</DialogTitle>
-          <DialogDescription>Fix anything we misread, then save.</DialogDescription>
-        </DialogHeader>
+      <div className="animate-fade">
         <RecipeForm
           initial={draft}
-          submitLabel="Save recipe"
+          title="Check Details"
+          left={
+            <NavButton onClick={() => setDraft(null)}>
+              <ChevronLeftIcon className="-ml-1.5 size-6" strokeWidth={2.25} aria-hidden /> Back
+            </NavButton>
+          }
+          submitLabel="Save"
           pending={create.isPending}
           onSubmit={save}
-          secondaryAction={
-            <Button type="button" variant="ghost" onClick={() => setDraft(null)}>
-              <ArrowLeftIcon data-icon="inline-start" /> Back
-            </Button>
-          }
         />
-      </>
+      </div>
     );
   }
 
   return (
-    <>
-      <DialogHeader>
-        <DialogTitle className="font-heading text-2xl">Add a recipe</DialogTitle>
-        <DialogDescription>Paste the recipe text and we'll sort it out for you.</DialogDescription>
-      </DialogHeader>
-      <form
-        className="grid gap-3"
-        onSubmit={(e) => {
-          e.preventDefault();
-          if (text.trim()) setDraft(parseRecipeText(text));
-        }}
+    <form
+      className="animate-fade"
+      onSubmit={(e) => {
+        e.preventDefault();
+        if (text.trim()) setDraft(parseRecipeText(text));
+      }}
+    >
+      <SheetNav
+        left={<NavButton onClick={onDone}>Cancel</NavButton>}
+        title="New Recipe"
+        right={
+          <NavButton type="submit" bold disabled={!text.trim()}>
+            Next
+          </NavButton>
+        }
+      />
+      <div className="flex flex-col items-center pt-4 pb-5 text-center">
+        <span className="flex size-14 items-center justify-center rounded-[18px] bg-[linear-gradient(135deg,#ff9f0a,#ff375f)] text-white shadow-[0_12px_28px_-10px_rgba(0,0,0,0.5)]">
+          <SparklesIcon className="size-7" aria-hidden />
+        </span>
+        <p className="mt-3 text-[20px] font-semibold tracking-tight">Paste a recipe</p>
+        <p className="mt-1 max-w-xs text-[15px] text-label-2">
+          From a website, a note or a message. We'll pull out the ingredients and steps.
+        </p>
+      </div>
+      <label htmlFor={`${id}-paste`} className="sr-only">
+        Recipe text
+      </label>
+      <textarea
+        id={`${id}-paste`}
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+        rows={10}
+        placeholder="Paste a recipe here…"
+        className="block min-h-56 w-full resize-none rounded-2xl bg-surface px-4 py-3 text-[17px] leading-snug outline-none placeholder:text-label-3 focus:ring-2 focus:ring-blue/40"
+        autoFocus
+      />
+      <div className="mt-3 flex items-center justify-center gap-2 text-[15px]">
+        <button
+          type="button"
+          className="font-medium text-blue active:opacity-50"
+          onClick={() => setText(SAMPLE_RECIPE_TEXT)}
+        >
+          Try a sample
+        </button>
+        <span className="text-label-3">·</span>
+        <button
+          type="button"
+          className="font-medium text-blue active:opacity-50"
+          onClick={() => setDraft(BLANK)}
+        >
+          Type it in
+        </button>
+      </div>
+      <button
+        type="submit"
+        disabled={!text.trim()}
+        className="mt-5 mb-2 flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-blue text-[17px] font-semibold text-white transition-transform active:scale-[0.98] disabled:opacity-40"
       >
-        <label htmlFor={`${id}-paste`} className="sr-only">
-          Recipe text
-        </label>
-        <Textarea
-          id={`${id}-paste`}
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          rows={12}
-          placeholder="Paste a recipe here…"
-          className="min-h-56"
-          autoFocus
-        />
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <div className="flex gap-1">
-            <Button
-              type="button"
-              variant="link"
-              className="px-0"
-              onClick={() => setText(SAMPLE_RECIPE_TEXT)}
-            >
-              Try a sample
-            </Button>
-            <span className="self-center text-muted-foreground">·</span>
-            <Button type="button" variant="link" className="px-0" onClick={() => setDraft(BLANK)}>
-              Type it in
-            </Button>
-          </div>
-          <Button type="submit" size="lg" disabled={!text.trim()} className="rounded-full px-5">
-            <SparklesIcon data-icon="inline-start" /> Read recipe
-          </Button>
-        </div>
-      </form>
-    </>
+        <SparklesIcon className="size-4" aria-hidden /> Read Recipe
+      </button>
+    </form>
   );
 }
