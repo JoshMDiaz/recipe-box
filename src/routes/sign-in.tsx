@@ -1,9 +1,9 @@
 import { createFileRoute, redirect, useRouter } from "@tanstack/react-router";
 import { FirebaseError } from "firebase/app";
-import { CookingPotIcon } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
+import { AppIcon } from "@/components/app-icon";
 import { getCurrentUser, safeRedirect, signInWithGoogle } from "@/features/auth/auth";
 
 const searchSchema = z.object({
@@ -45,9 +45,7 @@ function SignIn() {
     <main className="flex min-h-dvh items-center justify-center px-4 py-12">
       <div className="w-full max-w-sm animate-rise space-y-6">
         <div className="space-y-2 text-center">
-          <div className="mx-auto flex size-16 items-center justify-center rounded-[20px] bg-[linear-gradient(135deg,#ff9f0a,#ff375f)] shadow-[0_12px_28px_-10px_rgba(0,0,0,0.5)]">
-            <CookingPotIcon className="size-8 text-white" aria-hidden />
-          </div>
+          <AppIcon className="mx-auto size-16" />
           <h1 className="pt-2 text-[34px] font-bold tracking-tight">Recipe Box</h1>
           <p className="text-[15px] text-label-2">Every recipe, one swipe away</p>
         </div>

@@ -1,9 +1,10 @@
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { BookOpenIcon, PlusIcon, SearchIcon, XIcon } from "lucide-react";
+import { PlusIcon, SearchIcon, XIcon } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
+import { AppIcon } from "@/components/app-icon";
 import { roundButton } from "@/components/grouped";
 import { PageHeader } from "@/components/page-header";
 import { UserMenu } from "@/features/auth/user-menu";
@@ -205,9 +206,7 @@ function EmptyState({ onAdd }: { onAdd: () => void }) {
   const seed = useSeedRecipes();
   return (
     <div className="mx-4 mt-6 flex flex-col items-center rounded-[26px] border-2 border-dashed border-separator px-6 py-12 text-center">
-      <span className="flex size-14 items-center justify-center rounded-[18px] bg-[linear-gradient(135deg,#ff9f0a,#ff375f)] text-white shadow-[0_12px_28px_-10px_rgba(0,0,0,0.5)]">
-        <BookOpenIcon className="size-7" aria-hidden />
-      </span>
+      <AppIcon className="size-14" />
       <h2 className="mt-4 text-[20px] font-semibold tracking-tight">Your recipe box is empty</h2>
       <p className="mt-1 max-w-sm text-[15px] text-label-2">
         Paste a recipe from anywhere and we'll pull out the ingredients and steps.
