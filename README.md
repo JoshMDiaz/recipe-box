@@ -61,7 +61,7 @@ src/
     queries.ts             # TanStack Query options and mutations
     parser.ts              # Pasted text → structured recipe (heuristic)
     image.ts               # Shrinks photos to small data URLs stored on the recipe
-    components/            # Recipe card, carousel, form, dialogs
+    components/            # Recipe card, carousel, form, bottom sheets
   components/ui/           # shadcn/ui components (generated with `pnpm shadcn add`)
   lib/firebase.ts          # Firebase init; connects to emulators in dev
 firestore.rules            # Security rules for recipes

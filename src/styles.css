@@ -1,33 +1,51 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
-@import "@fontsource-variable/geist";
-@import "@fontsource-variable/fraunces";
 
 /* Dark mode follows the OS setting — no toggle, no JS. */
 @custom-variant dark (@media (prefers-color-scheme: dark));
 
 @theme inline {
-  --font-sans: "Geist Variable", ui-sans-serif, system-ui, sans-serif;
-  --font-heading: "Fraunces Variable", ui-serif, Georgia, serif;
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --color-card: var(--card);
-  --color-card-foreground: var(--card-foreground);
-  --color-popover: var(--popover);
-  --color-popover-foreground: var(--popover-foreground);
-  --color-primary: var(--primary);
-  --color-primary-foreground: var(--primary-foreground);
-  --color-secondary: var(--secondary);
-  --color-secondary-foreground: var(--secondary-foreground);
-  --color-muted: var(--muted);
-  --color-muted-foreground: var(--muted-foreground);
-  --color-accent: var(--accent);
-  --color-accent-foreground: var(--accent-foreground);
-  --color-destructive: var(--destructive);
-  --color-border: var(--border);
-  --color-input: var(--input);
-  --color-ring: var(--ring);
+  --font-sans:
+    -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Inter", system-ui,
+    sans-serif;
+  --font-rounded: ui-rounded, "SF Pro Rounded", -apple-system, system-ui, sans-serif;
+
+  /* Apple system palette, shared with Bucket Budgets and Family Bank. */
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-label: var(--label);
+  --color-label-2: var(--label-2);
+  --color-label-3: var(--label-3);
+  --color-separator: var(--separator);
+  --color-fill: var(--fill);
+  --color-fill-2: var(--fill-2);
+  --color-overlay: var(--overlay);
+  --color-blue: var(--blue);
+  --color-green: var(--green);
+  --color-red: var(--red);
+  --color-orange: var(--orange);
+
+  /* shadcn tokens, mapped onto the palette for the remaining ui/ components. */
+  --color-background: var(--bg);
+  --color-foreground: var(--label);
+  --color-card: var(--surface);
+  --color-card-foreground: var(--label);
+  --color-popover: var(--surface);
+  --color-popover-foreground: var(--label);
+  --color-primary: var(--blue);
+  --color-primary-foreground: #fff;
+  --color-secondary: var(--fill);
+  --color-secondary-foreground: var(--label);
+  --color-muted: var(--fill);
+  --color-muted-foreground: var(--label-2);
+  --color-accent: var(--fill);
+  --color-accent-foreground: var(--label);
+  --color-destructive: var(--red);
+  --color-border: var(--separator);
+  --color-input: var(--fill-2);
+  --color-ring: var(--blue);
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
@@ -35,51 +53,53 @@
   --radius-2xl: calc(var(--radius) * 1.8);
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
+
+  --animate-rise: rise 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  --animate-fade: fade 0.25s ease-out both;
+  --animate-shake: shake 0.35s ease-in-out;
 }
 
-/* Warm kitchen palette carried over from the Lovable prototype. */
 :root {
   --radius: 0.75rem;
-  --background: oklch(0.965 0.018 80);
-  --foreground: oklch(0.24 0.03 45);
-  --card: oklch(0.99 0.008 85);
-  --card-foreground: oklch(0.24 0.03 45);
-  --popover: oklch(0.99 0.008 85);
-  --popover-foreground: oklch(0.24 0.03 45);
-  --primary: oklch(0.56 0.16 38);
-  --primary-foreground: oklch(0.98 0.01 85);
-  --secondary: oklch(0.9 0.04 130);
-  --secondary-foreground: oklch(0.3 0.06 135);
-  --muted: oklch(0.92 0.02 80);
-  --muted-foreground: oklch(0.48 0.03 55);
-  --accent: oklch(0.88 0.06 75);
-  --accent-foreground: oklch(0.3 0.05 50);
-  --destructive: oklch(0.55 0.22 27);
-  --border: oklch(0.86 0.025 70);
-  --input: oklch(0.86 0.025 70);
-  --ring: oklch(0.56 0.16 38);
+  --bg: #f2f2f7;
+  --surface: #ffffff;
+  --surface-2: #f2f2f7;
+  --label: #000000;
+  --label-2: rgb(60 60 67 / 0.6);
+  --label-3: rgb(60 60 67 / 0.3);
+  --separator: rgb(60 60 67 / 0.18);
+  --fill: rgb(120 120 128 / 0.12);
+  --fill-2: rgb(120 120 128 / 0.2);
+  --blue: #007aff;
+  --green: #34c759;
+  --red: #ff3b30;
+  --orange: #ff9500;
+  --overlay: rgb(0 0 0 / 0.35);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: oklch(0.19 0.015 50);
-    --foreground: oklch(0.93 0.015 80);
-    --card: oklch(0.235 0.018 50);
-    --card-foreground: oklch(0.93 0.015 80);
-    --popover: oklch(0.25 0.018 50);
-    --popover-foreground: oklch(0.93 0.015 80);
-    --primary: oklch(0.7 0.15 45);
-    --primary-foreground: oklch(0.18 0.02 45);
-    --secondary: oklch(0.32 0.04 130);
-    --secondary-foreground: oklch(0.88 0.05 130);
-    --muted: oklch(0.28 0.018 55);
-    --muted-foreground: oklch(0.72 0.02 70);
-    --accent: oklch(0.33 0.04 70);
-    --accent-foreground: oklch(0.92 0.03 80);
-    --destructive: oklch(0.7 0.19 22);
-    --border: oklch(1 0 0 / 11%);
-    --input: oklch(1 0 0 / 16%);
-    --ring: oklch(0.7 0.15 45);
+    --bg: #000000;
+    --surface: #1c1c1e;
+    --surface-2: #2c2c2e;
+    --label: #ffffff;
+    --label-2: rgb(235 235 245 / 0.6);
+    --label-3: rgb(235 235 245 / 0.3);
+    --separator: rgb(84 84 88 / 0.6);
+    --fill: rgb(120 120 128 / 0.24);
+    --fill-2: rgb(120 120 128 / 0.36);
+    --blue: #0a84ff;
+    --green: #30d158;
+    --red: #ff453a;
+    --orange: #ff9f0a;
+    --overlay: rgb(0 0 0 / 0.6);
+  }
+
+  /* Sheets and menus sit on an elevated gray in dark mode, like iOS. */
+  .elevated {
+    --bg: #1c1c1e;
+    --surface: #2c2c2e;
+    --surface-2: #3a3a3c;
   }
 }
 
@@ -90,12 +110,72 @@
   html {
     @apply font-sans antialiased;
     color-scheme: light dark;
+    -webkit-tap-highlight-color: transparent;
+    text-rendering: optimizeLegibility;
   }
   body {
-    @apply min-h-dvh bg-background text-foreground;
+    @apply min-h-dvh bg-bg text-label;
+    overscroll-behavior-y: none;
   }
   button:not(:disabled),
   [role="button"]:not(:disabled) {
     cursor: pointer;
+    touch-action: manipulation;
+  }
+  /* Prevent iOS zoom on input focus. */
+  input,
+  select,
+  textarea {
+    font-size: max(16px, 1em);
+  }
+  /* Number inputs get their own steppers on desktop; they only add noise. */
+  input[type="number"]::-webkit-inner-spin-button,
+  input[type="number"]::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+  input[type="number"] {
+    -moz-appearance: textfield;
+  }
+}
+
+@keyframes shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  20% {
+    transform: translateX(-10px);
+  }
+  40% {
+    transform: translateX(8px);
+  }
+  60% {
+    transform: translateX(-6px);
+  }
+  80% {
+    transform: translateX(4px);
+  }
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(16px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes fade {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
   }
 }

@@ -1,6 +1,7 @@
 import { ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
 import { useRef, useState } from "react";
-import { Button } from "@/components/ui/button";
+import { roundButton } from "@/components/grouped";
+import { cn } from "@/lib/utils";
 import type { Recipe } from "../types";
 import { RecipeCard } from "./recipe-card";
 
@@ -26,38 +27,45 @@ export function RecipeCarousel({ recipes }: { recipes: Recipe[] }) {
       <div
         ref={track}
         onScroll={onScroll}
-        className="flex snap-x snap-mandatory [scrollbar-width:none] overflow-x-auto overscroll-x-contain [&::-webkit-scrollbar]:hidden"
+        className="flex snap-x snap-mandatory [scrollbar-width:none] overflow-x-auto overscroll-x-contain pb-6 [&::-webkit-scrollbar]:hidden"
       >
-        {recipes.map((r) => (
+        {recipes.map((r, i) => (
           <div key={r.id} className="w-full shrink-0 snap-center px-4">
-            <RecipeCard recipe={r} className="h-[calc(100dvh-21.5rem)] min-h-[22rem]" />
+            <RecipeCard
+              recipe={r}
+              style={{ animationDelay: `${Math.min(i, 3) * 70}ms` }}
+              className="h-[calc(100dvh-20rem)] min-h-[24rem] active:scale-[0.99]"
+            />
           </div>
         ))}
       </div>
       {n > 1 && (
-        <div className="mt-4 flex items-center justify-center gap-4">
-          <Button variant="outline" size="icon-lg" className="rounded-full" onClick={() => go(-1)}>
-            <ChevronLeftIcon />
+        <div className="flex items-center justify-center gap-4">
+          <button type="button" className={roundButton} onClick={() => go(-1)}>
+            <ChevronLeftIcon className="size-5" strokeWidth={2.5} />
             <span className="sr-only">Previous recipe</span>
-          </Button>
+          </button>
           {n <= 10 ? (
             <div className="flex gap-1.5" aria-hidden>
               {recipes.map((r, i) => (
                 <span
                   key={r.id}
-                  className={`h-2 rounded-full transition-all ${i === index ? "w-5 bg-primary" : "w-2 bg-border"}`}
+                  className={cn(
+                    "h-2 rounded-full transition-all",
+                    i === index ? "w-5 bg-blue" : "w-2 bg-fill-2",
+                  )}
                 />
               ))}
             </div>
           ) : (
-            <span className="text-sm text-muted-foreground tabular-nums">
+            <span className="font-rounded text-[15px] font-semibold text-label-2 tabular-nums">
               {index + 1} / {n}
             </span>
           )}
-          <Button variant="outline" size="icon-lg" className="rounded-full" onClick={() => go(1)}>
-            <ChevronRightIcon />
+          <button type="button" className={roundButton} onClick={() => go(1)}>
+            <ChevronRightIcon className="size-5" strokeWidth={2.5} />
             <span className="sr-only">Next recipe</span>
-          </Button>
+          </button>
         </div>
       )}
     </div>
